@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Analytics\Support\AnalyticsCache;
+use Modules\Attendance\Contracts\HolidayRepositoryInterface;
 use Modules\Attendance\Enums\AttendanceSource;
 use Modules\Attendance\Enums\AttendanceStatus;
 use Modules\Attendance\Jobs\NotifyManagerOfAbsence;
@@ -20,13 +21,19 @@ class MarkAbsenteesCommand extends Command
 
     protected $description = 'Mark employees absent for a day with no check-in, notify their managers, and record the daily attendance summary.';
 
-    public function handle(): int
+    public function handle(HolidayRepositoryInterface $holidays): int
     {
         $date = $this->argument('date') ?? now()->toDateString();
         $carbonDate = Carbon::parse($date);
 
         if ($carbonDate->isWeekend()) {
             $this->info("{$date} is a weekend - nothing to mark.");
+
+            return self::SUCCESS;
+        }
+
+        if ($holidays->isHoliday($date)) {
+            $this->info("{$date} is a holiday - nothing to mark.");
 
             return self::SUCCESS;
         }

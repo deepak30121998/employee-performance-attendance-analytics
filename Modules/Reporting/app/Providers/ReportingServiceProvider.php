@@ -2,8 +2,10 @@
 
 namespace Modules\Reporting\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
+use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class ReportingServiceProvider extends ModuleServiceProvider
 {
@@ -36,11 +38,19 @@ class ReportingServiceProvider extends ModuleServiceProvider
 
     /**
      * Define module schedules.
-     * 
-     * @param $schedule
+     *
+     * @param  $schedule
      */
     // protected function configureSchedules(Schedule $schedule): void
     // {
     //     $schedule->command('inspire')->hourly();
     // }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // reports have no model to hang a policy on, so a gate does the job
+        Gate::define('export-reports', fn (User $user) => $user->isAdmin());
+    }
 }

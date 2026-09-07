@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Attendance\Enums\AttendanceSource;
 use Modules\Attendance\Enums\AttendanceStatus;
 use Modules\Attendance\Models\Attendance;
+use Modules\Attendance\Models\Holiday;
 use Modules\User\Enums\Role;
 
 class AttendanceDatabaseSeeder extends Seeder
@@ -24,6 +25,12 @@ class AttendanceDatabaseSeeder extends Seeder
         $end = now()->subDay();
         $seededAt = now();
 
+        $holidays = Holiday::query()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('date')
+            ->map(fn ($d) => $d->toDateString())
+            ->all();
+
         $rows = [];
 
         foreach ($employees as $employee) {
@@ -31,7 +38,7 @@ class AttendanceDatabaseSeeder extends Seeder
             $presenceRate = mt_rand(45, 98) / 100;
 
             for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
-                if ($day->isWeekend()) {
+                if ($day->isWeekend() || in_array($day->toDateString(), $holidays, true)) {
                     continue;
                 }
 

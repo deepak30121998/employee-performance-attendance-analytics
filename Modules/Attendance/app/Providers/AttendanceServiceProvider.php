@@ -6,10 +6,12 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Gate;
 use Modules\Attendance\Console\Commands\MarkAbsenteesCommand;
 use Modules\Attendance\Contracts\AttendanceRepositoryInterface;
+use Modules\Attendance\Contracts\HolidayRepositoryInterface;
 use Modules\Attendance\Models\Attendance;
 use Modules\Attendance\Observers\AttendanceObserver;
 use Modules\Attendance\Policies\AttendancePolicy;
 use Modules\Attendance\Repositories\AttendanceRepository;
+use Modules\Attendance\Repositories\HolidayRepository;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class AttendanceServiceProvider extends ModuleServiceProvider
@@ -32,6 +34,7 @@ class AttendanceServiceProvider extends ModuleServiceProvider
         parent::register();
 
         $this->app->bind(AttendanceRepositoryInterface::class, AttendanceRepository::class);
+        $this->app->bind(HolidayRepositoryInterface::class, HolidayRepository::class);
     }
 
     public function boot(): void

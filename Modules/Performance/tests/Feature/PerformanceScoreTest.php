@@ -101,6 +101,22 @@ class PerformanceScoreTest extends TestCase
         $this->assertSame(1, PerformanceScore::where('employee_id', $employee->id)->where('month', '2026-08-01')->count());
     }
 
+    public function test_admin_can_record_a_score_for_any_department(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->admin()->create();
+        $employee = User::factory()->employee()->create();
+
+        $this->actingAs($admin, 'sanctum')->postJson('/api/performance', [
+            'employee_id' => $employee->id,
+            'month' => '2026-08',
+            'score' => 7,
+        ])->assertCreated();
+
+        $this->assertSame(1, PerformanceScore::where('employee_id', $employee->id)->count());
+    }
+
     public function test_employee_only_sees_their_own_performance_history(): void
     {
         $employee = User::factory()->employee()->create();

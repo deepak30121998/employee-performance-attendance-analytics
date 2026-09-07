@@ -2,8 +2,10 @@
 
 namespace Modules\Analytics\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
+use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class AnalyticsServiceProvider extends ModuleServiceProvider
 {
@@ -36,11 +38,19 @@ class AnalyticsServiceProvider extends ModuleServiceProvider
 
     /**
      * Define module schedules.
-     * 
-     * @param $schedule
+     *
+     * @param  $schedule
      */
     // protected function configureSchedules(Schedule $schedule): void
     // {
     //     $schedule->command('inspire')->hourly();
     // }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // every role gets a dashboard; the service scopes what's in it
+        Gate::define('view-analytics', fn (User $user) => true);
+    }
 }

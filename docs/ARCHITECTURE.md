@@ -9,6 +9,9 @@ would evolve at 10M+ rows.
 
 `APP_TIMEZONE=Asia/Kolkata` (`.env`). Every timestamp — `check_in_at`, `check_out_at`,
 `created_at`, etc. — is stored and read in this single organizational timezone, not UTC.
+The MySQL session timezone is pinned to the same offset (`config/database.php`,
+`DB_TIMEZONE=+05:30`), so TIMESTAMP columns round-trip identically for any client, including
+raw SQL/BI tools that don't go through Laravel.
 
 This is a deliberate simplification for a **single-tenant, single-office** HR system: there is
 no cross-timezone requirement in the spec, and storing wall-clock local time avoids a whole
@@ -142,21 +145,23 @@ that returns immediately, and safety under retry.
   parsing even on a slow disk), `$tries = 3`, `$backoff = [10, 30, 90]` seconds.
 
 **Real evidence, not just architecture**: `Modules/Import/tests/Feature/LargeImportTest.php`
-runs a genuine 20,000-row file (200 employees × 100 days) through the actual queued job and
-measures wall-clock time and peak memory delta, asserting memory stays under a fixed 64MB
-ceiling regardless of row count (streaming means it should never scale with row count — a
-regression back to loading the whole file would blow past this on a much smaller file, not
-just a large one). A representative run on this machine:
+runs a genuine 20,000-row file by default (200 employees × 100 days) through the actual
+queued job and measures wall-clock time and peak memory delta, asserting memory stays under a
+fixed 64MB ceiling regardless of row count (streaming means it should never scale with row
+count — a regression back to loading the whole file would blow past this on a much smaller
+file, not just a large one).
+
+The row count is configurable, so the literal spec figure has been run and measured:
 
 ```
-20,000 rows in 2.20s (9,077 rows/sec), peak extra memory 2.0MB
+LARGE_IMPORT_ROWS=500000 php artisan test --filter=LargeImportTest
+
+[LargeImportTest] 500,000 rows in 37.69s (13,267 rows/sec), peak extra memory 4.0MB
 ```
 
-At that throughput, 500,000 rows extrapolates to roughly 55 seconds — comfortably inside the
-job's 30-minute `$timeout`, and irrelevant to the HTTP request either way since processing
-happens entirely on the queue worker. (Not run at the literal 500k scale in the test suite —
-several minutes per test run for no additional assertion coverage over the 20k run, which
-already proves the memory-boundedness claim the row count itself doesn't change.)
+Comfortably inside the job's 30-minute `$timeout`, memory flat as designed, and irrelevant to
+the HTTP request either way since processing happens entirely on the queue worker. CI runs
+keep the 20k default — same assertions, a fraction of the wall-clock.
 
 **Further scaling beyond this implementation**: at genuinely extreme volume (tens of millions
 of rows in one file), the next lever is chunk size itself — 500 balances transaction overhead
@@ -284,6 +289,14 @@ In order of what to reach for first:
    system is within an order of magnitude of needing it yet, and adding partitioning to a live
    table later is a heavier migration than adding one now to an empty one, so it's listed here
    as the next step rather than spec'd prematurely.
+
+## Working days and holidays
+
+Attendance percentages divide by "expected working days": Mon-Fri minus the `holidays` table
+(`WorkingDaysCalculator`, fed by `HolidayRepositoryInterface` from the Attendance module).
+The absentee scheduler skips weekends and holidays for the same reason - nobody should be
+marked absent on Diwali. Holidays are seeded from `HolidaySeeder` and can be managed directly
+in the table; there is deliberately no CRUD endpoint for them, they change a few times a year.
 
 ## Scheduler: idempotent by construction
 

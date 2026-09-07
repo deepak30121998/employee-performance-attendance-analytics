@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Modules\Attendance\Models\Attendance;
 use Modules\Attendance\Models\DailyAttendanceSummary;
+use Modules\Attendance\Models\Holiday;
 use Modules\Attendance\Notifications\EmployeeAbsentNotification;
 use Modules\User\Models\Department;
 use Tests\TestCase;
@@ -90,5 +91,17 @@ class MarkAbsenteesCommandTest extends TestCase
         $this->artisan('attendance:mark-absentees', ['date' => '2026-08-01'])->assertSuccessful();
 
         $this->assertDatabaseMissing('attendances', ['employee_id' => $employee->id, 'date' => '2026-08-01']);
+    }
+
+    public function test_skips_holidays(): void
+    {
+        $employee = User::factory()->employee()->create();
+
+        // 2026-08-05 is a Wednesday
+        Holiday::create(['date' => '2026-08-05', 'name' => 'Test Holiday']);
+
+        $this->artisan('attendance:mark-absentees', ['date' => '2026-08-05'])->assertSuccessful();
+
+        $this->assertDatabaseMissing('attendances', ['employee_id' => $employee->id, 'date' => '2026-08-05']);
     }
 }

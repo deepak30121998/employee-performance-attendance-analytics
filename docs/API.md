@@ -96,15 +96,15 @@ Role-scoped (own / department / all). Query params: `employee_id` (admin only),
 
 ## Performance
 
-### `POST /performance` — manager only, own department
+### `POST /performance` — admin (anyone) or manager (own department)
 
 ```json
 // Request
 { "employee_id": 5, "month": "2026-08", "score": 8, "comment": "Great sprint." }
 ```
 `201` with the created score. `422` if `score` is outside 1-10 or `month` isn't `Y-m`. `409` if
-a score for this employee/month already exists. `403` if the employee isn't in the manager's
-department, or the caller isn't a manager.
+a score for this employee/month already exists. `403` if a manager targets an employee outside
+their department, or the caller is an employee.
 
 Recording a score queues a database notification to the employee
 (`PerformanceScoreAdded`) — visible via Laravel's standard `$user->notifications` relation.

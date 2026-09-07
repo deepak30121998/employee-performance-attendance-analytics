@@ -8,7 +8,7 @@ class AttendanceReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->isAdmin();
+        return $this->user()->can('export-reports');
     }
 
     public function rules(): array

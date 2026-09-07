@@ -73,6 +73,12 @@ erDiagram
         json raw_row
     }
 
+    HOLIDAYS {
+        bigint id PK
+        date date UK
+        string name
+    }
+
     DAILY_ATTENDANCE_SUMMARIES {
         bigint id PK
         date date UK "one summary per day"

@@ -8,8 +8,7 @@ class AnalyticsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // every role gets a dashboard, scoping happens in the service
-        return true;
+        return $this->user()->can('view-analytics');
     }
 
     public function rules(): array

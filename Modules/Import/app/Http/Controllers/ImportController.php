@@ -33,7 +33,7 @@ class ImportController extends Controller
 
     public function show(ImportBatch $import): ImportBatchResource
     {
-        $this->authorize('viewAny', ImportBatch::class);
+        $this->authorize('view', $import);
 
         return new ImportBatchResource($import->load('rowErrors'));
     }

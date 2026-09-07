@@ -55,9 +55,13 @@ Seeded logins (password is `password` for all):
 | manager | manager@example.com |
 | employee | employee@example.com |
 
-The seeder also adds 4 departments, a manager + 5 employees per department, and a couple of
-months of attendance and performance data, so the dashboards aren't empty on first run.
-Attendance/performance demo data is skipped if those tables already have rows.
+The seeder also adds 4 departments, a manager + 5 employees per department, a public-holiday
+calendar, and a couple of months of attendance and performance data, so the dashboards aren't
+empty on first run. Attendance/performance demo data is skipped if those tables already have
+rows.
+
+Attendance percentages count working days as Mon-Fri minus the `holidays` table; the nightly
+absentee job also skips weekends and holidays.
 
 ## Queue worker
 
@@ -111,7 +115,7 @@ Full examples in [docs/API.md](docs/API.md).
 | POST | `/api/attendance/check-in` | authenticated |
 | POST | `/api/attendance/check-out` | authenticated |
 | GET | `/api/attendance` | role-scoped |
-| POST | `/api/performance` | manager (own dept) |
+| POST | `/api/performance` | admin (anyone), manager (own dept) |
 | GET | `/api/performance` | role-scoped |
 | POST | `/api/import` | admin |
 | GET | `/api/import`, `/api/import/{id}` | admin |

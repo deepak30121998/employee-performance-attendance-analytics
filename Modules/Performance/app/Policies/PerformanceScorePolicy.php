@@ -9,11 +9,16 @@ class PerformanceScorePolicy
 {
     use HandlesAuthorization;
 
-    public function create(User $manager, User $employee): bool
+    public function create(User $user, User $employee): bool
     {
-        return $manager->isManager()
-            && $manager->department_id !== null
-            && $manager->department_id === $employee->department_id;
+        // admin can score anyone, a manager only their own department
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->isManager()
+            && $user->department_id !== null
+            && $user->department_id === $employee->department_id;
     }
 
     public function viewAny(User $user): bool
