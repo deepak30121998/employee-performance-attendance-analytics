@@ -1,0 +1,8 @@
+{
+    "User": true,
+    "Attendance": true,
+    "Performance": true,
+    "Import": true,
+    "Analytics": true,
+    "Reporting": true
+}
