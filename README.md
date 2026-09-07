@@ -33,11 +33,13 @@ DB_DATABASE=employee_performance_attendance
 DB_USERNAME=root
 DB_PASSWORD=
 
-QUEUE_CONNECTION=redis
-CACHE_STORE=redis
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
+QUEUE_CONNECTION=database
+CACHE_STORE=database
 ```
+
+Queue and cache run on the database out of the box, so nothing extra is needed to try the
+project. On a real deployment switch both to `redis` (needs the phpredis extension or predis)
+and set `REDIS_HOST`/`REDIS_PORT`.
 
 Create the database, then:
 
@@ -68,7 +70,7 @@ absentee job also skips weekends and holidays.
 CSV imports and notifications run on the queue, so keep a worker running:
 
 ```bash
-php artisan queue:work redis --tries=3
+php artisan queue:work --tries=3
 ```
 
 Without it, `POST /api/import` still returns 202 but the batch stays `pending`.
