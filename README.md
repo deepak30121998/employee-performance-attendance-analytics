@@ -1,66 +1,125 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Employee Performance & Attendance Analytics
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel backend for employee attendance, monthly performance scores, bulk CSV import,
+analytics dashboards and CSV reports. Built as modules (`nwidart/laravel-modules`) with
+Sanctum auth and three roles: admin, manager, employee.
 
-## About Laravel
+More docs:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - timezone strategy, concurrency handling, how 500k+ row imports work, indexes/EXPLAIN, scaling notes
+- [docs/API.md](docs/API.md) - request/response examples for every endpoint
+- [docs/ER-DIAGRAM.md](docs/ER-DIAGRAM.md) - schema
+- [docs/postman_collection.json](docs/postman_collection.json) - Postman collection
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+PHP 8.3, Laravel 11, MySQL 8, Redis (queue + cache), Sanctum, PHPUnit
 
-## Learning Laravel
+## Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Set your DB and Redis details in `.env`:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=employee_performance_attendance
+DB_USERNAME=root
+DB_PASSWORD=
 
-## Laravel Sponsors
+QUEUE_CONNECTION=redis
+CACHE_STORE=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Create the database, then:
 
-### Premium Partners
+```bash
+php artisan migrate
+php artisan db:seed
+php artisan serve
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Seeded logins (password is `password` for all):
 
-## Contributing
+| Role | Email |
+|---|---|
+| admin | admin@example.com |
+| manager | manager@example.com |
+| employee | employee@example.com |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The seeder also adds 4 departments, a manager + 5 employees per department, and a couple of
+months of attendance and performance data, so the dashboards aren't empty on first run.
+Attendance/performance demo data is skipped if those tables already have rows.
 
-## Code of Conduct
+## Queue worker
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+CSV imports and notifications run on the queue, so keep a worker running:
 
-## Security Vulnerabilities
+```bash
+php artisan queue:work redis --tries=3
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Without it, `POST /api/import` still returns 202 but the batch stays `pending`.
 
-## License
+## Scheduler / cron
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`attendance:mark-absentees` runs daily at 23:55 - it marks no-shows absent, notifies their
+managers and saves a summary row in `daily_attendance_summaries`. Add the standard cron entry
+on the server:
+
+```cron
+* * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Run it manually for any date if needed:
+
+```bash
+php artisan attendance:mark-absentees 2026-08-03
+```
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Tests use a separate `employee_performance_attendance_test` MySQL database (see
+`phpunit.xml`). The two concurrency tests fork real OS processes (`pcntl_fork`) to prove the
+duplicate check-in / duplicate score guarantees; they skip themselves under `--parallel`.
+
+## API
+
+Full examples in [docs/API.md](docs/API.md).
+
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/login` | public |
+| POST | `/api/logout` | authenticated |
+| POST | `/api/employees` | admin |
+| GET | `/api/employees` | admin (all), manager (own dept) |
+| GET | `/api/employees/{id}` | admin; manager (own dept); employee (self) |
+| PUT/DELETE | `/api/employees/{id}` | admin; manager (own dept, limited fields) |
+| GET | `/api/profile` | authenticated |
+| POST | `/api/attendance/check-in` | authenticated |
+| POST | `/api/attendance/check-out` | authenticated |
+| GET | `/api/attendance` | role-scoped |
+| POST | `/api/performance` | manager (own dept) |
+| GET | `/api/performance` | role-scoped |
+| POST | `/api/import` | admin |
+| GET | `/api/import`, `/api/import/{id}` | admin |
+| GET | `/api/analytics?month=Y-m` | role-scoped dashboard |
+| GET | `/api/reports/attendance?from=&to=` | admin, CSV |
+| GET | `/api/reports/performance?month=Y-m` | admin, CSV |
+
+Auth is a Sanctum bearer token from `/api/login`. Everything responds in JSON.
+
+Note for big imports: `POST /api/import` accepts up to 100MB, raise `upload_max_filesize`
+and `post_max_size` in `php.ini` to match.
