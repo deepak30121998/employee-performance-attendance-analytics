@@ -21,7 +21,7 @@ All responses are JSON regardless of the request's `Accept` header. All routes e
 }
 ```
 ```json
-// 422 — wrong credentials
+// 422 - wrong credentials
 { "message": "These credentials do not match our records.", "errors": { "email": ["These credentials do not match our records."] } }
 ```
 
@@ -35,7 +35,7 @@ Returns the caller's own record (same shape as `login`'s `user`).
 
 ## Employees (`User` module)
 
-### `POST /employees` — admin only
+### `POST /employees` - admin only
 
 ```json
 // Request
@@ -52,23 +52,23 @@ Returns the caller's own record (same shape as `login`'s `user`).
 
 ### `GET /employees`
 Role-scoped: admin sees everyone; manager sees their own department; employee sees only
-themselves (in practice, use `/profile` for that). Cursor-paginated —
+themselves (in practice, use `/profile` for that). Cursor-paginated -
 `{ "data": [...], "links": { "next": "...?cursor=..." }, "meta": {...} }`.
 
 Query params (admin only): `?department_id=`.
 
 ### `GET /employees/{id}`
 Admin can view anyone; a manager can view employees in their own department; an employee can
-only view themselves. `403` otherwise — changing the id in the URL to someone from another
+only view themselves. `403` otherwise - changing the id in the URL to someone from another
 department gets rejected by the policy.
 
 ### `PUT /employees/{id}`
 Admin may update any field, including `role`/`department_id`. A manager may update an
 employee in their own department, but `role` and `department_id` are silently stripped from
-the update — a manager cannot escalate a role or move someone out of their oversight.
+the update - a manager cannot escalate a role or move someone out of their oversight.
 `403` if the target isn't in the manager's department.
 
-### `DELETE /employees/{id}` — admin only
+### `DELETE /employees/{id}` - admin only
 Soft-deletes. `200 { "message": "Employee removed." }`.
 
 ---
@@ -96,7 +96,7 @@ Role-scoped (own / department / all). Query params: `employee_id` (admin only),
 
 ## Performance
 
-### `POST /performance` — admin (anyone) or manager (own department)
+### `POST /performance` - admin (anyone) or manager (own department)
 
 ```json
 // Request
@@ -107,7 +107,7 @@ a score for this employee/month already exists. `403` if a manager targets an em
 their department, or the caller is an employee.
 
 Recording a score queues a database notification to the employee
-(`PerformanceScoreAdded`) — visible via Laravel's standard `$user->notifications` relation.
+(`PerformanceScoreAdded`) - visible via Laravel's standard `$user->notifications` relation.
 
 ### `GET /performance`
 Role-scoped (own history / department / all, via `employee_id` filter for admins). Query
@@ -117,11 +117,11 @@ params: `employee_id`, `month`.
 
 ## Import
 
-### `POST /import` — admin only, `multipart/form-data`
+### `POST /import` - admin only, `multipart/form-data`
 
 Field: `file` (CSV, ≤100MB). Header row: `employee_email,date,check_in,check_out,performance`.
 
-`202` immediately — processing happens on a queue worker:
+`202` immediately - processing happens on a queue worker:
 ```json
 { "data": { "id": 7, "original_filename": "aug.csv", "status": "pending", "total_rows": null, "processed_rows": 0, ... } }
 ```
@@ -129,21 +129,21 @@ Field: `file` (CSV, ≤100MB). Header row: `employee_email,date,check_in,check_o
 file. `403` for non-admins.
 
 Per-row failure reasons recorded in `import_row_errors` (visible via `GET /import/{id}`):
-`employee not found`, `invalid date`, `invalid check-in/check-out sequence`,
+`employee not found`, `invalid date`, `invalid time`, `invalid check-in/check-out sequence`,
 `invalid score`, `duplicate attendance`, `employee email is missing or invalid`,
 `performance requires a date`, `row has no attendance or performance data`.
 
-### `GET /import` — admin only
+### `GET /import` - admin only
 Cursor-paginated list of past batches.
 
-### `GET /import/{id}` — admin only
+### `GET /import/{id}` - admin only
 One batch, including its `row_errors` (`row_number`, `reason`).
 
 ---
 
 ## Analytics
 
-### `GET /analytics?month=2026-08` — any authenticated user, response shaped by role
+### `GET /analytics?month=2026-08` - any authenticated user, response shaped by role
 
 **Admin** (`scope: "company"`):
 ```json
@@ -159,7 +159,7 @@ One batch, including its `row_errors` (`row_number`, `reason`).
 
 **Manager** (`scope: "department"`): `department_id`, `attendance_percentage`,
 `average_performance_score`, `employees_with_irregular_attendance` (attendance < 75% this
-month) — scoped to their own department.
+month) - scoped to their own department.
 
 **Employee** (`scope: "self"`): their own `attendance_percentage` and
 `average_performance_score`.
@@ -169,7 +169,7 @@ Attendance/PerformanceScore write (see `docs/ARCHITECTURE.md`).
 
 ---
 
-## Reports — admin only, streamed CSV download
+## Reports - admin only, streamed CSV download
 
 ### `GET /reports/attendance?from=2026-08-01&to=2026-08-31`
 Columns: `employee_email,employee_name,date,check_in,check_out,working_minutes,status`.
@@ -177,4 +177,4 @@ Columns: `employee_email,employee_name,date,check_in,check_out,working_minutes,s
 ### `GET /reports/performance?month=2026-08`
 Columns: `employee_email,employee_name,month,score,comment`.
 
-Both stream row-by-row (`cursor()`) — memory use does not grow with result size.
+Both stream row-by-row (`cursor()`) - memory use does not grow with result size.

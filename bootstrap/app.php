@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Every route in this app lives under /api — always answer in JSON,
+        // Every route in this app lives under /api - always answer in JSON,
         // regardless of what Accept header the client happened to send.
         $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*'));
 
