@@ -3,54 +3,44 @@
 namespace Modules\Performance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Performance\Http\Requests\StorePerformanceScoreRequest;
+use Modules\Performance\Http\Resources\PerformanceScoreResource;
+use Modules\Performance\Models\PerformanceScore;
+use Modules\Performance\Services\PerformanceService;
 
 class PerformanceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly PerformanceService $performance,
+    ) {}
+
+    public function store(StorePerformanceScoreRequest $request): JsonResource
     {
-        return view('performance::index');
+        $employee = User::findOrFail($request->validated('employee_id'));
+
+        $this->authorize('create', [PerformanceScore::class, $employee]);
+
+        $score = $this->performance->record(
+            manager: $request->user(),
+            employeeId: $employee->id,
+            month: $request->normalizedMonth(),
+            score: $request->validated('score'),
+            comment: $request->validated('comment'),
+        );
+
+        return new PerformanceScoreResource($score);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return view('performance::create');
+        $this->authorize('viewAny', PerformanceScore::class);
+
+        $scores = $this->performance->listFor($request->user(), $request->only(['employee_id', 'month']));
+
+        return PerformanceScoreResource::collection($scores);
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('performance::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('performance::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }

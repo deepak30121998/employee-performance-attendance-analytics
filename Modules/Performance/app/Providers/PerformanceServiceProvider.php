@@ -2,45 +2,38 @@
 
 namespace Modules\Performance\Providers;
 
+use Illuminate\Support\Facades\Gate;
+use Modules\Performance\Contracts\PerformanceRepositoryInterface;
+use Modules\Performance\Models\PerformanceScore;
+use Modules\Performance\Observers\PerformanceScoreObserver;
+use Modules\Performance\Policies\PerformanceScorePolicy;
+use Modules\Performance\Repositories\PerformanceRepository;
 use Nwidart\Modules\Support\ModuleServiceProvider;
-use Illuminate\Console\Scheduling\Schedule;
 
 class PerformanceServiceProvider extends ModuleServiceProvider
 {
-    /**
-     * The name of the module.
-     */
     protected string $name = 'Performance';
 
-    /**
-     * The lowercase version of the module name.
-     */
     protected string $nameLower = 'performance';
 
-    /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
-
-    /**
-     * Provider classes to register.
-     *
-     * @var string[]
-     */
     protected array $providers = [
         EventServiceProvider::class,
         RouteServiceProvider::class,
     ];
 
-    /**
-     * Define module schedules.
-     * 
-     * @param $schedule
-     */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(PerformanceRepositoryInterface::class, PerformanceRepository::class);
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        Gate::policy(PerformanceScore::class, PerformanceScorePolicy::class);
+
+        PerformanceScore::observe(PerformanceScoreObserver::class);
+    }
 }
