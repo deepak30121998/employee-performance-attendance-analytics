@@ -1,8 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\User\Http\Controllers\UserController;
+use Modules\User\Http\Controllers\AuthController;
+use Modules\User\Http\Controllers\EmployeeController;
 
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('users', UserController::class)->names('user');
+Route::post('login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+
+    Route::get('profile', [EmployeeController::class, 'profile']);
+
+    Route::get('employees', [EmployeeController::class, 'index']);
+    Route::post('employees', [EmployeeController::class, 'store']);
+    Route::get('employees/{employee}', [EmployeeController::class, 'show']);
+    Route::put('employees/{employee}', [EmployeeController::class, 'update']);
+    Route::delete('employees/{employee}', [EmployeeController::class, 'destroy']);
 });

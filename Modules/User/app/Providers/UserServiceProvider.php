@@ -2,8 +2,13 @@
 
 namespace Modules\User\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
+use Modules\User\Contracts\UserRepositoryInterface;
+use Modules\User\Policies\UserPolicy;
+use Modules\User\Repositories\UserRepository;
+use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class UserServiceProvider extends ModuleServiceProvider
 {
@@ -34,10 +39,24 @@ class UserServiceProvider extends ModuleServiceProvider
         RouteServiceProvider::class,
     ];
 
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        Gate::policy(User::class, UserPolicy::class);
+    }
+
     /**
      * Define module schedules.
-     * 
-     * @param $schedule
+     *
+     * @param  $schedule
      */
     // protected function configureSchedules(Schedule $schedule): void
     // {
