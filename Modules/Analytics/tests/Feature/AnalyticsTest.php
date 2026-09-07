@@ -62,6 +62,20 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('data.average_performance_score', 4);
     }
 
+    public function test_department_less_manager_gets_an_empty_dashboard_not_company_data(): void
+    {
+        $manager = User::factory()->manager()->create(['department_id' => null]);
+        $employee = User::factory()->employee()->create();
+        PerformanceScore::factory()->create(['employee_id' => $employee->id, 'month' => '2026-08-01', 'score' => 9]);
+
+        $response = $this->actingAs($manager, 'sanctum')->getJson('/api/analytics?month=2026-08');
+
+        $response->assertOk()
+            ->assertJsonPath('data.scope', 'department')
+            ->assertJsonPath('data.average_performance_score', null)
+            ->assertJsonPath('data.employees_with_irregular_attendance', []);
+    }
+
     public function test_dashboard_is_cached_until_explicitly_invalidated(): void
     {
         $admin = User::factory()->admin()->create();

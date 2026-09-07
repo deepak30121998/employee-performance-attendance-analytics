@@ -2,10 +2,12 @@
 
 namespace Modules\Attendance\Exceptions;
 
+use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
 
-class AttendanceConflictException extends RuntimeException
+// routine 409s, no point cluttering the error log with them
+class AttendanceConflictException extends RuntimeException implements ShouldntReport
 {
     public static function alreadyCheckedIn(): self
     {

@@ -46,6 +46,19 @@ class ProcessAttendanceImportJob implements ShouldQueue
             return;
         }
 
+        // a full reprocess (resume cursor reset to 0) recounts everything, so
+        // start the counters from zero instead of inflating the old totals
+        if ($batch->last_processed_row === 0 && $batch->processed_rows > 0) {
+            $batch->update([
+                'processed_rows' => 0,
+                'imported_attendance_count' => 0,
+                'imported_performance_count' => 0,
+                'skipped_row_count' => 0,
+                'failed_row_count' => 0,
+            ]);
+            $batch->rowErrors()->delete();
+        }
+
         $batch->update(['status' => ImportStatus::Processing, 'started_at' => $batch->started_at ?? now()]);
 
         $fullPath = Storage::disk('local')->path($batch->disk_path);

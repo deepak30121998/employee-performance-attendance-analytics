@@ -2,11 +2,12 @@
 
 namespace Modules\Import\Exceptions;
 
+use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Http\JsonResponse;
 use Modules\Import\Models\ImportBatch;
 use RuntimeException;
 
-class DuplicateImportException extends RuntimeException
+class DuplicateImportException extends RuntimeException implements ShouldntReport
 {
     public function __construct(
         private readonly ImportBatch $existingBatch,

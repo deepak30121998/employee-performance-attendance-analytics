@@ -45,7 +45,7 @@ class AttendanceDatabaseSeeder extends Seeder
                     'date' => $day->toDateString(),
                     'check_in_at' => $checkIn,
                     'check_out_at' => $checkOut,
-                    'working_minutes' => $present ? $checkIn->diffInMinutes($checkOut) : null,
+                    'working_minutes' => $present ? (int) $checkIn->diffInMinutes($checkOut) : null,
                     'status' => $present ? AttendanceStatus::Present->value : AttendanceStatus::Absent->value,
                     'source' => AttendanceSource::System->value,
                     'created_at' => $seededAt,

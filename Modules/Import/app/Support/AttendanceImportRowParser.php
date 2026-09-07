@@ -98,7 +98,13 @@ class AttendanceImportRowParser
         $checkInAt = $this->parseTimeOn($date, $checkIn);
         $checkOutAt = $this->parseTimeOn($date, $checkOut);
 
-        if (! $checkInAt || ! $checkOutAt || $checkOutAt->lessThanOrEqualTo($checkInAt)) {
+        // malformed time vs out-of-order are different mistakes, keep the
+        // stored reasons distinguishable for whoever reads the error report
+        if (! $checkInAt || ! $checkOutAt) {
+            return [null, null, 'invalid time'];
+        }
+
+        if ($checkOutAt->lessThanOrEqualTo($checkInAt)) {
             return [null, null, 'invalid check-in/check-out sequence'];
         }
 

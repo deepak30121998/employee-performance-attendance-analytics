@@ -4,9 +4,9 @@ namespace Modules\Performance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Performance\Http\Requests\ListPerformanceRequest;
 use Modules\Performance\Http\Requests\StorePerformanceScoreRequest;
 use Modules\Performance\Http\Resources\PerformanceScoreResource;
 use Modules\Performance\Models\PerformanceScore;
@@ -35,11 +35,11 @@ class PerformanceController extends Controller
         return new PerformanceScoreResource($score);
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListPerformanceRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', PerformanceScore::class);
 
-        $scores = $this->performance->listFor($request->user(), $request->only(['employee_id', 'month']));
+        $scores = $this->performance->listFor($request->user(), $request->filters());
 
         return PerformanceScoreResource::collection($scores);
     }

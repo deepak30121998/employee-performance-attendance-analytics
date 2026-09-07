@@ -73,6 +73,19 @@ class AnalyticsService
 
     private function managerDashboard(User $manager, string $month): array
     {
+        // a manager without a department manages nobody; without this guard the
+        // null department would drop the scoping and expose company-wide data
+        if ($manager->department_id === null) {
+            return [
+                'scope' => 'department',
+                'department_id' => null,
+                'month' => $month,
+                'attendance_percentage' => 0.0,
+                'average_performance_score' => null,
+                'employees_with_irregular_attendance' => [],
+            ];
+        }
+
         return $this->cache->remember(
             $this->cacheKey('manager', (string) $manager->department_id, $month),
             self::TTL_SECONDS,

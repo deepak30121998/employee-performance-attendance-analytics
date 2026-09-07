@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Analytics\Support\AnalyticsCache;
 use Modules\Attendance\Enums\AttendanceSource;
 use Modules\Attendance\Enums\AttendanceStatus;
 use Modules\Attendance\Jobs\NotifyManagerOfAbsence;
@@ -50,8 +51,10 @@ class MarkAbsenteesCommand extends Command
             'updated_at' => $now,
         ])->all();
 
-        if ($rows !== []) {
-            DB::table('attendances')->insert($rows);
+        // insertOrIgnore: a manual run racing the scheduled one just skips the
+        // rows the other already wrote instead of aborting on the unique index
+        foreach (array_chunk($rows, 1000) as $chunk) {
+            DB::table('attendances')->insertOrIgnore($chunk);
         }
 
         foreach ($toMark as $employee) {
@@ -79,6 +82,9 @@ class MarkAbsenteesCommand extends Command
             'absent' => $absentCount,
             'newly_marked_absent' => count($rows),
         ]);
+
+        // bulk insert bypasses the observer, so bump the cache version here
+        app(AnalyticsCache::class)->flush();
 
         $this->info("Marked {$this->pluralizeCount(count($rows))} absent for {$date}. Present: {$presentCount}, Absent: {$absentCount}.");
 

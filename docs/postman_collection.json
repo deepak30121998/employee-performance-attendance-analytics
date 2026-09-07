@@ -118,12 +118,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/employees/1",
+              "raw": "{{base_url}}/employees/1",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
                 "employees",
                 "1"
               ]

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\User\DTOs\EmployeeData;
+use Modules\User\Http\Requests\ListEmployeesRequest;
 use Modules\User\Http\Requests\StoreEmployeeRequest;
 use Modules\User\Http\Requests\UpdateEmployeeRequest;
 use Modules\User\Http\Resources\UserResource;
@@ -21,11 +22,9 @@ class EmployeeController extends Controller
 
     // Returned directly (not wrapped in response()->json()) so Laravel's
     // Responsable handling adds the cursor "links"/"meta" pagination envelope.
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListEmployeesRequest $request): AnonymousResourceCollection
     {
-        $this->authorize('viewAny', User::class);
-
-        $employees = $this->employees->listFor($request->user(), $request->only('department_id'));
+        $employees = $this->employees->listFor($request->user(), $request->validated());
 
         return UserResource::collection($employees);
     }

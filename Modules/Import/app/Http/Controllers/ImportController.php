@@ -28,9 +28,7 @@ class ImportController extends Controller
     {
         $this->authorize('viewAny', ImportBatch::class);
 
-        $batches = ImportBatch::query()->orderByDesc('id')->cursorPaginate(25);
-
-        return ImportBatchResource::collection($batches);
+        return ImportBatchResource::collection($this->imports->listBatches());
     }
 
     public function show(ImportBatch $import): ImportBatchResource

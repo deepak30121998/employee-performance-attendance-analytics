@@ -90,6 +90,7 @@ class PerformanceRepository implements PerformanceRepositoryInterface
     {
         return PerformanceScore::query()
             ->join('users', 'users.id', '=', 'performance_scores.employee_id')
+            ->whereNull('users.deleted_at')
             ->where('performance_scores.month', $month)
             ->orderBy('users.name')
             ->select([

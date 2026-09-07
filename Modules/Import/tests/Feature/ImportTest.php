@@ -128,6 +128,11 @@ class ImportTest extends TestCase
 
         $this->assertSame(1, Attendance::count(), 'A full re-run must not create a duplicate attendance row.');
         $this->assertSame(1, PerformanceScore::count(), 'A full re-run must not create a duplicate performance row.');
+
+        // counters restart from zero on a full reprocess instead of inflating
+        $batch->refresh();
+        $this->assertSame(1, $batch->processed_rows);
+        $this->assertSame(0, $batch->imported_attendance_count);
     }
 
     public function test_a_retried_job_resumes_from_last_processed_row_instead_of_reparsing_earlier_rows(): void

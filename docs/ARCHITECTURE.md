@@ -73,8 +73,8 @@ differently because they're genuinely different problems:
    same import** (`source = 'import'`), it's a safe no-op — the import is being retried or
    re-processed and this is exactly what should happen. If the existing row is a **real manual
    check-in** (`source = 'manual'`), the import must never silently overwrite it — that's
-   recorded as a `duplicate attendance` row error instead. See
-   `ProcessAttendanceImportJob::importAttendanceRow()`.
+   recorded as a `duplicate attendance` row error instead. See the source check inside
+   `ProcessAttendanceImportJob::processChunk()`.
 
 ## Duplicate whole-file import
 

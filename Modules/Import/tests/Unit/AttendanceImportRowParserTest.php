@@ -64,6 +64,14 @@ class AttendanceImportRowParserTest extends TestCase
         $this->assertSame('invalid check-in/check-out sequence', $result->error);
     }
 
+    public function test_malformed_time_is_invalid(): void
+    {
+        $result = $this->parser->parse(5, ['employee_email' => 'a@b.com', 'date' => '2026-08-01', 'check_in' => '10:70', 'check_out' => '18:00', 'performance' => '']);
+
+        $this->assertFalse($result->isValid());
+        $this->assertSame('invalid time', $result->error);
+    }
+
     public function test_score_out_of_range_is_invalid(): void
     {
         $result = $this->parser->parse(6, ['employee_email' => 'a@b.com', 'date' => '2026-08-01', 'check_in' => '', 'check_out' => '', 'performance' => '11']);

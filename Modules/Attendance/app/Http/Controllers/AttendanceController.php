@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Attendance\Http\Requests\ListAttendanceRequest;
 use Modules\Attendance\Http\Resources\AttendanceResource;
 use Modules\Attendance\Models\Attendance;
 use Modules\Attendance\Services\AttendanceService;
@@ -31,14 +32,11 @@ class AttendanceController extends Controller
         return new AttendanceResource($attendance);
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ListAttendanceRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Attendance::class);
 
-        $attendances = $this->attendance->listFor(
-            $request->user(),
-            $request->only(['employee_id', 'from', 'to', 'status'])
-        );
+        $attendances = $this->attendance->listFor($request->user(), $request->validated());
 
         return AttendanceResource::collection($attendances);
     }

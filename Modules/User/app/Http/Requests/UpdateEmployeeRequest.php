@@ -23,7 +23,7 @@ class UpdateEmployeeRequest extends FormRequest
             'role' => ['sometimes', Rule::enum(Role::class)],
             // not nullable - an update must never strip a non-admin's department
             'department_id' => ['sometimes', 'required', 'integer', 'exists:departments,id'],
-            'designation' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'designation' => ['sometimes', 'required', 'string', 'max:255'],
         ];
     }
 }

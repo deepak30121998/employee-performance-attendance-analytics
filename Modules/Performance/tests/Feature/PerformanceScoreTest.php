@@ -114,4 +114,18 @@ class PerformanceScoreTest extends TestCase
         $response->assertOk();
         $this->assertEquals([$employee->id], $ids->all());
     }
+
+    public function test_employee_cannot_read_someone_elses_scores_via_the_employee_id_filter(): void
+    {
+        $employee = User::factory()->employee()->create();
+        $other = User::factory()->employee()->create();
+        PerformanceScore::factory()->create(['employee_id' => $other->id]);
+
+        // the filter only applies to admins; for an employee it's ignored
+        $response = $this->actingAs($employee, 'sanctum')
+            ->getJson("/api/performance?employee_id={$other->id}")
+            ->assertOk();
+
+        $this->assertSame([], $response->json('data'));
+    }
 }

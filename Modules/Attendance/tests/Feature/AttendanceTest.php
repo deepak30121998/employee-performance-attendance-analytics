@@ -80,6 +80,33 @@ class AttendanceTest extends TestCase
             ->assertStatus(409);
     }
 
+    public function test_check_in_after_checking_out_the_same_day_is_rejected(): void
+    {
+        $employee = User::factory()->employee()->create();
+
+        $this->actingAs($employee, 'sanctum')->postJson('/api/attendance/check-in')->assertCreated();
+        $this->actingAs($employee, 'sanctum')->postJson('/api/attendance/check-out')->assertOk();
+        $this->actingAs($employee, 'sanctum')->postJson('/api/attendance/check-in')->assertStatus(409);
+
+        $this->assertSame(1, Attendance::where('employee_id', $employee->id)->count());
+    }
+
+    public function test_employee_cannot_read_someone_elses_rows_via_the_employee_id_filter(): void
+    {
+        $department = Department::factory()->create();
+        $employee = User::factory()->employee()->create(['department_id' => $department->id]);
+        $coworker = User::factory()->employee()->create(['department_id' => $department->id]);
+
+        Attendance::factory()->create(['employee_id' => $coworker->id, 'date' => '2026-08-03']);
+
+        // the filter only applies to admins; for an employee it's ignored
+        $response = $this->actingAs($employee, 'sanctum')
+            ->getJson("/api/attendance?employee_id={$coworker->id}")
+            ->assertOk();
+
+        $this->assertSame([], $response->json('data'));
+    }
+
     public function test_employee_only_sees_their_own_attendance(): void
     {
         $employee = User::factory()->employee()->create();

@@ -17,6 +17,9 @@ class NotifyManagerOfAbsence implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // lock TTL so a SIGKILLed worker doesn't leave the id locked forever
+    public int $uniqueFor = 3600;
+
     public function __construct(
         private readonly int $employeeId,
         private readonly string $date,

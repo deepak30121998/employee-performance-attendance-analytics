@@ -2,10 +2,11 @@
 
 namespace Modules\Performance\Exceptions;
 
+use Illuminate\Contracts\Debug\ShouldntReport;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
 
-class PerformanceScoreConflictException extends RuntimeException
+class PerformanceScoreConflictException extends RuntimeException implements ShouldntReport
 {
     public static function alreadyRecordedForMonth(): self
     {

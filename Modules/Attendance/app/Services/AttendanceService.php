@@ -84,7 +84,8 @@ class AttendanceService
 
             $locked->update([
                 'check_out_at' => $now,
-                'working_minutes' => $locked->check_in_at->diffInMinutes($now),
+                // carbon 3 returns a float here, the column is an int
+                'working_minutes' => (int) $locked->check_in_at->diffInMinutes($now),
             ]);
 
             return $locked;

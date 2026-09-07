@@ -126,6 +126,7 @@ class AttendanceRepository implements AttendanceRepositoryInterface
         // name/email is pulled via a join instead of risking an N+1 per row.
         return Attendance::query()
             ->join('users', 'users.id', '=', 'attendances.employee_id')
+            ->whereNull('users.deleted_at')
             ->whereBetween('attendances.date', [$from, $to])
             ->orderBy('attendances.date')
             ->orderBy('attendances.employee_id')
