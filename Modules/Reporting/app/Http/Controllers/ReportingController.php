@@ -3,54 +3,24 @@
 namespace Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Modules\Reporting\Http\Requests\AttendanceReportRequest;
+use Modules\Reporting\Http\Requests\PerformanceReportRequest;
+use Modules\Reporting\Services\ReportService;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly ReportService $reports,
+    ) {}
+
+    public function attendance(AttendanceReportRequest $request): StreamedResponse
     {
-        return view('reporting::index');
+        return $this->reports->attendanceCsv($request->validated('from'), $request->validated('to'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function performance(PerformanceReportRequest $request): StreamedResponse
     {
-        return view('reporting::create');
+        return $this->reports->performanceCsv($request->validated('month').'-01');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('reporting::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('reporting::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }

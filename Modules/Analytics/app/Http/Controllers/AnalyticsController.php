@@ -3,54 +3,23 @@
 namespace Modules\Analytics\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
+use Modules\Analytics\Http\Requests\AnalyticsRequest;
+use Modules\Analytics\Services\AnalyticsService;
 
 class AnalyticsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly AnalyticsService $analytics,
+    ) {}
+
+    public function index(AnalyticsRequest $request): JsonResponse
     {
-        return view('analytics::index');
+        $month = $request->string('month')->toString() ?: Carbon::now()->format('Y-m');
+
+        return response()->json([
+            'data' => $this->analytics->forUser($request->user(), $month),
+        ]);
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('analytics::create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('analytics::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('analytics::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }
