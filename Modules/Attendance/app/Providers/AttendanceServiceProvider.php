@@ -2,45 +2,54 @@
 
 namespace Modules\Attendance\Providers;
 
-use Nwidart\Modules\Support\ModuleServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
+use Modules\Attendance\Console\Commands\MarkAbsenteesCommand;
+use Modules\Attendance\Contracts\AttendanceRepositoryInterface;
+use Modules\Attendance\Models\Attendance;
+use Modules\Attendance\Observers\AttendanceObserver;
+use Modules\Attendance\Policies\AttendancePolicy;
+use Modules\Attendance\Repositories\AttendanceRepository;
+use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class AttendanceServiceProvider extends ModuleServiceProvider
 {
-    /**
-     * The name of the module.
-     */
     protected string $name = 'Attendance';
 
-    /**
-     * The lowercase version of the module name.
-     */
     protected string $nameLower = 'attendance';
 
-    /**
-     * Command classes to register.
-     *
-     * @var string[]
-     */
-    // protected array $commands = [];
+    protected array $commands = [
+        MarkAbsenteesCommand::class,
+    ];
 
-    /**
-     * Provider classes to register.
-     *
-     * @var string[]
-     */
     protected array $providers = [
         EventServiceProvider::class,
         RouteServiceProvider::class,
     ];
 
-    /**
-     * Define module schedules.
-     * 
-     * @param $schedule
-     */
-    // protected function configureSchedules(Schedule $schedule): void
-    // {
-    //     $schedule->command('inspire')->hourly();
-    // }
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(AttendanceRepositoryInterface::class, AttendanceRepository::class);
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        Gate::policy(Attendance::class, AttendancePolicy::class);
+
+        Attendance::observe(AttendanceObserver::class);
+    }
+
+    protected function configureSchedules(Schedule $schedule): void
+    {
+        // late enough that same-day check-ins have landed; a re-run for the
+        // same date is a no-op anyway
+        $schedule->command('attendance:mark-absentees')
+            ->dailyAt('23:55')
+            ->withoutOverlapping()
+            ->onOneServer();
+    }
 }

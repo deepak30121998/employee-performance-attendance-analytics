@@ -3,54 +3,43 @@
 namespace Modules\Attendance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Attendance\Http\Resources\AttendanceResource;
+use Modules\Attendance\Models\Attendance;
+use Modules\Attendance\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly AttendanceService $attendance,
+    ) {}
+
+    public function checkIn(Request $request): JsonResponse
     {
-        return view('attendance::index');
+        $attendance = $this->attendance->checkIn($request->user());
+
+        return (new AttendanceResource($attendance))->response()->setStatusCode(201);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function checkOut(Request $request): JsonResource
     {
-        return view('attendance::create');
+        $attendance = $this->attendance->checkOut($request->user());
+
+        return new AttendanceResource($attendance);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return view('attendance::show');
+        $this->authorize('viewAny', Attendance::class);
+
+        $attendances = $this->attendance->listFor(
+            $request->user(),
+            $request->only(['employee_id', 'from', 'to', 'status'])
+        );
+
+        return AttendanceResource::collection($attendances);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('attendance::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }
