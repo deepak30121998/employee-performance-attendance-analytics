@@ -3,54 +3,40 @@
 namespace Modules\Import\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Import\Http\Requests\StoreImportRequest;
+use Modules\Import\Http\Resources\ImportBatchResource;
+use Modules\Import\Models\ImportBatch;
+use Modules\Import\Services\ImportService;
 
 class ImportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly ImportService $imports,
+    ) {}
+
+    public function store(StoreImportRequest $request): JsonResponse
     {
-        return view('import::index');
+        $batch = $this->imports->upload($request->user(), $request->file('file'));
+
+        return (new ImportBatchResource($batch))->response()->setStatusCode(202);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(Request $request): JsonResource
     {
-        return view('import::create');
+        $this->authorize('viewAny', ImportBatch::class);
+
+        $batches = ImportBatch::query()->orderByDesc('id')->cursorPaginate(25);
+
+        return ImportBatchResource::collection($batches);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function show(ImportBatch $import): ImportBatchResource
     {
-        return view('import::show');
+        $this->authorize('viewAny', ImportBatch::class);
+
+        return new ImportBatchResource($import->load('rowErrors'));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('import::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }
